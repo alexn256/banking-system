@@ -22,16 +22,13 @@ fun consumeMessages(topic:String, kafkaConsumer:Consumer<String, Transaction>):U
     while (true) {
         val consumerRecords = kafkaConsumer.poll(Duration.ofSeconds(1))
         if (consumerRecords.isEmpty) {
-            //do something else.
+            continue
         }
-        for (record in consumerRecords) {
-            println("Received record (key: ${record.key()}, value: ${record.value()}, partition: ${record.partition()}, offset: ${record.offset()}")
+        consumerRecords.forEach {
+            println("Received record (key: ${it.key()}, " +
+                    "value: ${it.value()}, partition: ${it.partition()}, offset: ${it.offset()}")
+            approveTransaction(it.value())
         }
-        /**
-         * Fill in the code here
-         * Check if there are new transaction to read from Kafka.
-         * Approve the incoming transactions
-         */
         kafkaConsumer.commitAsync()
     }
 }
