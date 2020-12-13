@@ -4,6 +4,7 @@ import model.UserResidenceDatabase
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerRecord
 import reader.IncomingTransactionsReader
 import java.util.*
 import java.util.concurrent.ExecutionException
@@ -33,11 +34,15 @@ private fun processTransactions(incomingTransactionReader: IncomingTransactionsR
                                 kafkaProducer: Producer<String, Transaction>): Unit {
     while (incomingTransactionReader.hasNext()) {
         val transaction = incomingTransactionReader.next()
-
-        /**
-         * Fill in you code here.
-         * Send the transaction to the right topic based on the origin of the transaction and the user's residence data
-         */
+        val userResidence = userResidenceDatabase.getUserResidence(transaction.user)
+        val record: ProducerRecord<String, Transaction> = if (userResidence == transaction.transactionLocation) {
+            ProducerRecord(VALID_TRANSACTIONS_TOPIC, transaction.user, transaction)
+        } else {
+            ProducerRecord(SUSPICIOUS_TRANSACTIONS_TOPIC, transaction.user, transaction)
+        }
+        val recordMetadata = kafkaProducer.send(record).get()
+        println("Record with (key: ${record.key()}, value: ${record.value()}), was sent to " +
+                "(partition: ${recordMetadata.partition()}, offset: ${recordMetadata.offset()}, topic: ${recordMetadata.topic()})")
     }
 }
 
