@@ -3,7 +3,6 @@ package reader
 import model.Transaction
 import java.util.*
 import java.util.Collections.emptyList
-import java.util.Collections.unmodifiableList
 
 /**
  * Mocks an HTTP server that receives purchase transactions in real time
@@ -22,12 +21,13 @@ object IncomingTransactionsReader : Iterator<Transaction> {
     private fun loadTransactions(): List<Transaction> {
         val inputStream = this.javaClass.classLoader.getResourceAsStream(INPUT_TRANSACTIONS_FILE)
         val scanner = Scanner(inputStream)
-        val transactions:List<Transaction> = emptyList()
+        val transactions: MutableList<Transaction> = emptyList()
         while (scanner.hasNextLine()) {
             val transaction = scanner.nextLine().split(" ")
             val user = transaction[0]
             val transactionLocation = transaction[1]
             val amount = transaction[2].toDouble()
+            transactions.add(Transaction(user, amount, transactionLocation))
         }
         return transactions
     }
